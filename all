@@ -1,0 +1,78 @@
+import gevent
+import gevent.monkey
+
+gevent.monkey.patch_all()
+import requests
+import re
+import json
+from lxml import etree
+import math
+import time
+import csv
+from collections import Counter
+import pymysql
+
+def down_html(key_word, page_id=0):
+    """
+    @param key_word:关键词
+    @param page_id:页码
+    @return:请求下载网页源代码
+    """
+    url = "https://www.toutiao.com/api/search/content/?aid=24&app_name=web_search&offset={}&format=json&keyword={}&autoload=true&count=20".format(page_id*20,key_word)
+    headers = {
+        "cookie":"tt_webid=6766497904494118414; WEATHER_CITY=%E5%8C%97%E4%BA%AC; tt_webid=6766497904494118414; csrftoken=ed63c0e36a8fe5b183e7522dbf81e2b7; __tasessionId=ioqmxe5ot1577081777567; s_v_web_id=6222e2b44703bfe5ebed1e6893dbdce5; sso_uid_tt=aabce97ac53cd575f7637300e0d73ae3; toutiao_sso_user=604483c4171ec9ac22cd27ed825c3e7c; sid_guard=b5999c0b8f8fd80385c756a46f0b3a34%7C1577086763%7C5184000%7CFri%2C+21-Feb-2020+07%3A39%3A23+GMT; uid_tt=a7d33bd0ffc409d6f2717b02edc6e850; sid_tt=b5999c0b8f8fd80385c756a46f0b3a34; sessionid=b5999c0b8f8fd80385c756a46f0b3a34; cp=5E0046FFD3477E1",
+        # "Cookie":"_uuid=32C8C785-5AC1-D195-83A3-9B56C8759BDE10794infoc; buvid3=6E75F6FE-E083-4F17-BFEB-2A03EAFF25B0190965infoc; INTVER=1; CURRENT_FNVAL=16; sid=apwgegc4; stardustvideo=1; LIVE_BUVID=AUTO2515770689769746; rpdid=|(u)~l~Y))u)0J'ul~~|Y)m~Y; laboratory=1-1",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36"
+
+    }
+    html = requests.get(url, headers=headers, timeout=10, verify=False).text
+    print(html)
+    return json.loads(html)
+
+
+def down_detail(key_word):
+    for i in range(2):
+        list_content = down_html(key_word,i)
+        for j in range(len(list_content['data'])):
+            try:
+                if list_content['data'][j]['ala_src']=="video_oracle":
+                    for jj in range(len(list_content['data'][j]['display'])):
+                        title = list_content['data'][j]['display'][jj]['title']
+                        poster_url = list_content['data'][j]['display'][jj]['image_url']
+                        user_name = list_content['data'][j]['display'][jj]['media_name']
+                        user_link = list_content['data'][j]['display'][jj]['media_url']
+                        vedio_info = list_content['data'][j]['display'][jj]['abstract']
+                        vedio_url = list_content['data'][j]['display'][jj]['share_url']
+                        play_points = list_content['data'][j]['display'][jj]['play_effective_count']
+                        time_cost = str(list_content['data'][j]['display'][jj]['video_duration'])
+                        print(title, vedio_url, time_cost, poster_url, user_name,user_link, play_points, vedio_info)
+            except Exception as e:
+                print(e)
+                pass
+            try:
+                if list_content['data'][j]['abstract']:
+                    title = list_content['data'][j]['title']
+                    poster_url = list_content['data'][j]['image_url']
+                    user_name = list_content['data'][j]['media_name']
+                    user_link = list_content['data'][j]['media_url']
+                    vedio_info = list_content['data'][j]['abstract']
+                    vedio_url = list_content['data'][j]['share_url']
+                    play_points = ""
+                    try:
+                        if list_content['data'][j]['video_duration']:
+                            time_cost = str(list_content['data'][j]['video_duration'])
+                    except:
+                        time_cost = ""
+                        pass
+
+
+                    print(title, vedio_url, time_cost, poster_url, user_name, user_link, play_points, vedio_info)
+            except Exception as e:
+                print(e)
+                pass
+
+
+
+
+if __name__ == "__main__":
+    down_detail("疯狂的外星人")
